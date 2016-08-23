@@ -23,7 +23,7 @@ namespace PYP.Domain.Services
 
         bool RemoveFromRole(string userName, string role);
 
-        IEnumerable<Role> GetRoles();
+        IEnumerable<Role> GetRoles(Guid userKey);
 
         Role GetRole(Guid roleKey);
 
@@ -34,9 +34,7 @@ namespace PYP.Domain.Services
         UserWithRoles GetUser(Guid userKey);
 
         UserWithRoles GetUser(string name);
-
-
-           
+              
             
     }
 }
