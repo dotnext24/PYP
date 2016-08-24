@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using PYP.Domain.Entities;
 using PYP.Domain.Entities.Core;
 using PYP.Domain.Entities.Extensions;
+using System.Security.Principal;
 
 namespace PYP.Domain.Services
 {
@@ -170,25 +171,54 @@ namespace PYP.Domain.Services
         {
             if(user!=null)
             {
-                var userRoles = GetUserRoles(user.Key);
+                var userRoles = GetRoles(user.Key);
+                return new UserWithRoles()
+                {
+                    User = user,
+                    Roles = userRoles
+                };
             }
-        }
 
-        
+            return null;
+        }
 
         public UserWithRoles GetUser(Guid userKey)
         {
-            throw new NotImplementedException();
+            var user = _userRepository.GetSingle(userKey);
+            if (user != null)
+                return GetUserWithRoles(user);
+            else
+                return null;
         }
 
         public PaginatedList<UserWithRoles> GetUsers(int pageIndex, int pageSize)
         {
-            throw new NotImplementedException();
+            var users = _userRepository.Paginate<Guid>(pageIndex, pageSize, x => x.Key,null,null);
+
+            return new PaginatedList<UserWithRoles>(
+                users.PageIndex,
+                users.PageSize,
+                users.TotalCount,
+                users.Select(u=>new UserWithRoles() {Roles=GetRoles(u.Key),User=u }).AsQueryable()
+                );
         }
 
         public bool RemoveFromRole(string userName, string role)
         {
-            throw new NotImplementedException();
+            var user = _userRepository.GetSingleByUserName(userName);
+            var roleEntity = _roleRepository.GetSingleByRoleName(role);
+            if(user!=null && roleEntity!=null)
+            {
+                var userInRole = _userInRoleRepository.GetAll().FirstOrDefault(x => x.UserKey == user.Key && x.RoleKey == roleEntity.Key);
+                if(userInRole!=null)
+                {
+                    _userInRoleRepository.Delete(userInRole);
+                    _userInRoleRepository.Save();
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public UserWithRoles UpdateUser(User user, string userName, string email)
@@ -205,7 +235,23 @@ namespace PYP.Domain.Services
 
         public ValidUserContext ValidateUser(string username, string password)
         {
-            throw new NotImplementedException();
+            var userCtx = new ValidUserContext();
+            var user = _userRepository.GetSingleByUserName(username);
+            if(user!=null && IsUserValid(user,password))
+            {
+                var userRoles = GetRoles(user.Key);
+                userCtx.User = new UserWithRoles()
+                {
+                    User=user,
+                    Roles=userRoles
+                };
+
+                var identity= new GenericIdentity(user.Name);
+                userCtx.Principal = new GenericPrincipal(identity, userRoles.Select(x => x.Name).ToArray());
+              
+            }
+
+            return userCtx;
         }
     }
 }
