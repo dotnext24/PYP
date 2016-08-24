@@ -41,17 +41,43 @@ namespace PYP.Domain.Services
 
         public bool AddToRole(string userName, string role)
         {
-            throw new NotImplementedException();
+            var user = _userRepository.GetSingleByUserName(userName);
+            if (user != null)
+            {
+                addUserToRole(user, role);
+                return true;
+            }
+            else
+                return false;
+
         }
 
         public bool AddToRole(Guid userKey, string role)
         {
-            throw new NotImplementedException();
+            var user = _userRepository.GetSingle(userKey);
+            if(user!=null)
+            {
+                addUserToRole(user,role);
+                return true;
+            }
+
+            return false;
         }
 
-        public bool ChangePassword(string userNmae, string oldPassword, string newPassword)
+        public bool ChangePassword(string userName, string oldPassword, string newPassword)
         {
-            throw new NotImplementedException();
+            var user = _userRepository.GetSingleByUserName(userName);
+            if(user!=null && IsPasswordValid(user,oldPassword))
+            {
+                user.HashedPassword = _cryptoService.EncryptPassword(newPassword, user.Salt);
+
+                _userRepository.Edit(user);
+                _userRepository.Save();
+
+                return true;
+            }
+
+            return false;
         }
 
         public OperationResult<UserWithRoles> CreateUser(string userName, string email, string password)
@@ -111,12 +137,12 @@ namespace PYP.Domain.Services
 
         public Role GetRole(string name)
         {
-            throw new NotImplementedException();
+            return _roleRepository.GetSingleByRoleName(name);
         }
 
         public Role GetRole(Guid roleKey)
         {
-            throw new NotImplementedException();
+            return _roleRepository.GetSingle(roleKey);
         }
 
         public IEnumerable<Role> GetRoles(Guid userKey)
@@ -136,8 +162,19 @@ namespace PYP.Domain.Services
 
         public UserWithRoles GetUser(string name)
         {
-            throw new NotImplementedException();
+           var user= _userRepository.GetSingleByUserName(name);
+           return GetUserWithRoles(user);
         }
+
+        private UserWithRoles GetUserWithRoles(User user)
+        {
+            if(user!=null)
+            {
+                var userRoles = GetUserRoles(user.Key);
+            }
+        }
+
+        
 
         public UserWithRoles GetUser(Guid userKey)
         {
