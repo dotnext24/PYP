@@ -37,6 +37,7 @@ namespace PYP.Domain.Services
 
         private bool IsPasswordValid(User user, string password)
         {
+            
             return string.Equals(_cryptoService.EncryptPassword(password, user.Salt), user.HashedPassword);
         }
 

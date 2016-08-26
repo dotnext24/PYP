@@ -10,5 +10,7 @@ namespace PYP.Domain.Services
     {
         string GenerateSalt();
         string EncryptPassword(string password, string salt);
+
+    
     }
 }
